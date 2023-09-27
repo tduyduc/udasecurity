@@ -19,7 +19,7 @@ public class ControlPanel extends JPanel {
     private Map<ArmingStatus, JButton> buttonMap;
 
 
-    public ControlPanel(SecurityService securityService) {
+    public ControlPanel(SecurityService securityService, SensorPanel sensorPanel) {
         super();
         setLayout(new MigLayout());
         this.securityService = securityService;
@@ -34,10 +34,12 @@ public class ControlPanel extends JPanel {
                 .collect(Collectors.toMap(status -> status, status -> new JButton(status.getDescription())));
 
         //add an action listener to each button that applies its arming status and recolors all the buttons
+        //also update sensor list
         buttonMap.forEach((k, v) -> {
             v.addActionListener(e -> {
                 securityService.setArmingStatus(k);
                 buttonMap.forEach((status, button) -> button.setBackground(status == k ? status.getColor() : null));
+                sensorPanel.updateSensorList();
             });
         });
 

@@ -61,6 +61,11 @@ public class SensorPanel extends JPanel {
         return p;
     }
 
+    // Package private
+    void updateSensorList() {
+        this.updateSensorList(this.sensorListPanel);
+    }
+
     /**
      * Requests the current list of sensors and updates the provided panel to display them. Sensors
      * will display in the order that they are created.

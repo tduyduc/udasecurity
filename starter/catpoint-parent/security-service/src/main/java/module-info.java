@@ -1,9 +1,6 @@
 module com.udacity.catpoint.securitymodule {
-  exports com.udacity.catpoint.security.application;
-  exports com.udacity.catpoint.security.data;
-  exports com.udacity.catpoint.security.service;
-
   requires com.udacity.catpoint.imagemodule;
+  opens com.udacity.catpoint.security.data to com.google.gson;
 
   requires com.google.common;
   requires com.google.gson;

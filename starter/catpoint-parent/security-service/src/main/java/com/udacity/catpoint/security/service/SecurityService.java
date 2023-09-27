@@ -8,8 +8,10 @@ import com.udacity.catpoint.security.data.ArmingStatus;
 import com.udacity.catpoint.security.data.SecurityRepository;
 
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Consumer;
 
 /**
  * Service that receives information about changes to the security system. Responsible for
@@ -23,6 +25,7 @@ public class SecurityService {
     private ImageService imageService;
     private SecurityRepository securityRepository;
     private Set<StatusListener> statusListeners = new HashSet<>();
+    private boolean hasCat = false;
 
     public SecurityService(SecurityRepository securityRepository, ImageService imageService) {
         this.securityRepository = securityRepository;
@@ -35,9 +38,26 @@ public class SecurityService {
      * @param armingStatus
      */
     public void setArmingStatus(ArmingStatus armingStatus) {
-        if(armingStatus == ArmingStatus.DISARMED) {
-            setAlarmStatus(AlarmStatus.NO_ALARM);
+        if (armingStatus == this.getArmingStatus()) {
+            return;
         }
+
+        switch (armingStatus) {
+            case DISARMED -> setAlarmStatus(AlarmStatus.NO_ALARM);
+
+            case ARMED_HOME, ARMED_AWAY -> {
+                // Added for: 11. If the system is armed-home while the camera shows a cat, set the alarm status to alarm.
+                if (this.hasCat) {
+                    this.setAlarmStatus(AlarmStatus.ALARM);
+                }
+
+                // toList makes a copy to prevent ConcurrentModificationException
+                this.getSensors().stream().toList().forEach(sensor ->
+                    this.changeSensorActivationStatus(sensor, false)
+                );
+            }
+        }
+
         securityRepository.setArmingStatus(armingStatus);
     }
 
@@ -47,10 +67,15 @@ public class SecurityService {
      * @param cat True if a cat is detected, otherwise false.
      */
     private void catDetected(Boolean cat) {
-        if(cat && getArmingStatus() == ArmingStatus.ARMED_HOME) {
-            setAlarmStatus(AlarmStatus.ALARM);
+        this.hasCat = cat;
+        if (cat) {
+            if (getArmingStatus() == ArmingStatus.ARMED_HOME) {
+                setAlarmStatus(AlarmStatus.ALARM);
+            }
         } else {
-            setAlarmStatus(AlarmStatus.NO_ALARM);
+            if (this.getSensors().stream().noneMatch(Sensor::getActive)) {
+                setAlarmStatus(AlarmStatus.NO_ALARM);
+            }
         }
 
         statusListeners.forEach(sl -> sl.catDetected(cat));
@@ -96,7 +121,9 @@ public class SecurityService {
     private void handleSensorDeactivated() {
         switch(securityRepository.getAlarmStatus()) {
             case PENDING_ALARM -> setAlarmStatus(AlarmStatus.NO_ALARM);
-            case ALARM -> setAlarmStatus(AlarmStatus.PENDING_ALARM);
+
+            // Removed for: If alarm is active, change in sensor state should not affect the alarm state.
+            // case ALARM -> setAlarmStatus(AlarmStatus.PENDING_ALARM);
         }
     }
 

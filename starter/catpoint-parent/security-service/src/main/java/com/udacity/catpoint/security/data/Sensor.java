@@ -14,6 +14,11 @@ public class Sensor implements Comparable<Sensor> {
     private Boolean active;
     private SensorType sensorType;
 
+    // For fixing:
+    // Exception in thread "main" java.lang.RuntimeException: Unable to create instance of class com.udacity.catpoint.security.data.Sensor. Registering an InstanceCreator or a TypeAdapter for this type, or adding a no-args constructor may fix this problem.
+    // This constructor is not used anywhere other than the Gson library!
+    private Sensor() {}
+
     public Sensor(String name, SensorType sensorType) {
         this.name = name;
         this.sensorType = sensorType;
